@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat tsconfig.json)",
+      "Bash(ls -la .env*)",
+      "Bash(ls node_modules)",
+      "Bash(npx drizzle-kit *)"
+    ]
+  }
+}
