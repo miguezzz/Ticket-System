@@ -22,8 +22,10 @@ implementa `add_to_cart` persistido no banco com TTL de 7 minutos.
 - `backend/src/events/admin-events.controller.ts`
 - `backend/src/events/events.service.ts`
 - `docs/reserva-temporaria-no-banco.md`
+- `docs/testing-e-ci.md`
 - `backend/src/reservations/reservations.controller.ts`
 - `backend/src/reservations/reservations.service.ts`
+- `backend/test/reservations.e2e-spec.ts`
 
 ## Pergunta operacional do momento
 
@@ -32,6 +34,7 @@ As reservas persistidas estao consistentes o bastante para seguir para Redis hol
 ## Checks recomendados agora
 
 - Rodar build do backend.
+- Rodar `docker compose --profile test run --rm backend-test`.
 - Criar seed e testar `POST /sessions/:id/reservations` em sessao `ASSIGNED`.
 - Testar reserva `GENERAL` por setor/quantidade.
 - Conferir snapshot de preco em `reservation_items.price_cents`.
@@ -66,5 +69,6 @@ A etapa 5 pode ser fechada quando:
 - Itens forem criados com snapshot de preco.
 - Reserva ativa unica por usuario/sessao for respeitada.
 - Cancelamento e expiracao manual liberarem itens.
+- Testes e2e passarem via Docker.
 - O projeto compilar.
 - Pendencias de Redis, BullMQ e concorrencia atomica estiverem marcadas para etapas futuras.

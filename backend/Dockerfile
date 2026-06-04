@@ -1,16 +1,25 @@
 # syntax=docker/dockerfile:1.7
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+FROM deps AS builder
+
 COPY tsconfig.json nest-cli.json ./
 COPY src ./src
 COPY drizzle ./drizzle
 RUN npm run build && npm prune --omit=dev
 
+FROM deps AS test
+
+COPY tsconfig.json nest-cli.json ./
+COPY src ./src
+COPY test ./test
+COPY drizzle ./drizzle
+CMD ["npm", "run", "test:ci"]
 
 FROM node:22-alpine AS runtime
 

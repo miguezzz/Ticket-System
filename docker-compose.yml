@@ -44,5 +44,20 @@ services:
       postgres:
         condition: service_healthy
 
+  backend-test:
+    build:
+      context: ./backend
+      target: test
+    profiles:
+      - test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://ticket:ticket@postgres:5432/ticket_system
+      RUN_MIGRATIONS: "true"
+    command: ["npm", "run", "test:ci"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:

@@ -11,7 +11,10 @@
     "db:migrate": "ts-node src/db/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "ts-node src/db/seed.ts"
+    "db:seed": "ts-node src/db/seed.ts",
+    "test:e2e": "npm run db:migrate && jest --config ./test/jest-e2e.json --runInBand",
+    "test:ci": "npm run build && npm run test:e2e",
+    "test": "npm run test:e2e"
   },
   "dependencies": {
     "@bull-board/api": "^6.5.0",
@@ -34,9 +37,15 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
+    "@nestjs/testing": "^11.1.24",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.0",
     "drizzle-kit": "^0.31.10",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.0"
   }

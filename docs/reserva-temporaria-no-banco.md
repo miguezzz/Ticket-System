@@ -129,6 +129,26 @@ rotina automaticamente.
 - `backend/src/reservations/reservations.controller.ts`
 - `backend/src/reservations/reservations.service.ts`
 - `backend/src/app.module.ts`
+- `backend/test/reservations.e2e-spec.ts`
+
+---
+
+## Testes
+
+Suite:
+
+```bash
+docker compose --profile test run --rm backend-test
+```
+
+Cobertura inicial:
+
+- cria evento, sessao, setor, precos e assentos;
+- cria reserva `HELD`;
+- valida snapshot de preco em `reservation_items`;
+- confirma assento `HELD` na disponibilidade;
+- cancela reserva;
+- confirma item `RELEASED` e assento `AVAILABLE`.
 
 ---
 
