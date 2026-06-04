@@ -174,7 +174,7 @@ assentos foi registrada em [eventos-e-assentos.md](./eventos-e-assentos.md).
 - `backend/src/db/index.ts` — cliente Drizzle (Pool `pg`)
 - `backend/src/db/migrate.ts` — runner de migrations
 - `backend/src/db/seed.ts` — seed (1 evento, sessão cinema + sessão show)
-- `backend/drizzle.config.ts` · `backend/.env.example`
+- `backend/drizzle.config.ts` · `.env.example`
 - `backend/drizzle/0000_init.sql` — primeira migration
 - Scripts: `db:generate`, `db:migrate`, `db:push`, `db:studio`, `db:seed`
 

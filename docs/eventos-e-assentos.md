@@ -163,7 +163,7 @@ O backend roda migrations automaticamente no start quando `RUN_MIGRATIONS=true`.
 
 ### Usar Supabase em vez do Postgres local
 
-Crie um `.env` na raiz a partir de `.env.supabase.example` e preencha
+Crie um `.env` na raiz a partir de `.env.example` e preencha
 `DATABASE_URL` com a connection string do Supabase.
 
 Subir backend apontando para Supabase:
