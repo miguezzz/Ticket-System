@@ -101,7 +101,7 @@ export const sessions = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// sectors — setor da sessão (classe + preço base + capacidade)
+// sectors — setor da sessão (classe + capacidade)
 //   GENERAL: capacity obrigatório · ASSIGNED: capacity derivado de seats
 // ---------------------------------------------------------------------------
 export const sectors = pgTable('sectors', {
@@ -111,11 +111,32 @@ export const sectors = pgTable('sectors', {
     .references(() => sessions.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   seatClass: seatClass('seat_class').notNull(),
-  basePriceCents: integer('base_price_cents').notNull(),
   capacity: integer('capacity'),
   createdAt,
   updatedAt,
 });
+
+// ---------------------------------------------------------------------------
+// sector_prices — preços explícitos por setor/tarifa
+// ---------------------------------------------------------------------------
+export const sectorPrices = pgTable(
+  'sector_prices',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sectorId: uuid('sector_id')
+      .notNull()
+      .references(() => sectors.id, { onDelete: 'cascade' }),
+    fareType: fareType('fare_type').notNull(),
+    priceCents: integer('price_cents').notNull(),
+    currency: char('currency', { length: 3 }).notNull().default('BRL'),
+    createdAt,
+    updatedAt,
+  },
+  (t) => [
+    uniqueIndex('sector_prices_sector_fare_uq').on(t.sectorId, t.fareType),
+    index('sector_prices_sector_idx').on(t.sectorId),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // seats — poltrona individual (apenas modo ASSIGNED)

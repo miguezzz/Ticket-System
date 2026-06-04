@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { db, pool } from './index';
-import { events, sessions, sectors, seats } from './schema';
+import { events, sectorPrices, sessions, sectors, seats } from './schema';
 
 /**
  * Seed mínimo: 1 evento com 2 sessões —
@@ -32,16 +32,37 @@ async function main() {
         sessionId: cinema.id,
         name: 'Plateia',
         seatClass: 'STANDARD',
-        basePriceCents: 3000,
       },
       {
         sessionId: cinema.id,
         name: 'Camarote',
         seatClass: 'PREMIUM',
-        basePriceCents: 6000,
       },
     ])
     .returning();
+
+  await db.insert(sectorPrices).values([
+    {
+      sectorId: plateia.id,
+      fareType: 'FULL',
+      priceCents: 3000,
+    },
+    {
+      sectorId: plateia.id,
+      fareType: 'HALF',
+      priceCents: 1500,
+    },
+    {
+      sectorId: premium.id,
+      fareType: 'FULL',
+      priceCents: 6000,
+    },
+    {
+      sectorId: premium.id,
+      fareType: 'HALF',
+      priceCents: 3000,
+    },
+  ]);
 
   const seatRows: (typeof seats.$inferInsert)[] = [];
   for (const [sector, rows] of [
@@ -74,20 +95,44 @@ async function main() {
     })
     .returning();
 
-  await db.insert(sectors).values([
+  const [pista, pistaPremium] = await db
+    .insert(sectors)
+    .values([
+      {
+        sessionId: show.id,
+        name: 'Pista',
+        seatClass: 'STANDARD',
+        capacity: 5000,
+      },
+      {
+        sessionId: show.id,
+        name: 'Pista Premium',
+        seatClass: 'PREMIUM',
+        capacity: 500,
+      },
+    ])
+    .returning();
+
+  await db.insert(sectorPrices).values([
     {
-      sessionId: show.id,
-      name: 'Pista',
-      seatClass: 'STANDARD',
-      basePriceCents: 8000,
-      capacity: 5000,
+      sectorId: pista.id,
+      fareType: 'FULL',
+      priceCents: 8000,
     },
     {
-      sessionId: show.id,
-      name: 'Pista Premium',
-      seatClass: 'PREMIUM',
-      basePriceCents: 16000,
-      capacity: 500,
+      sectorId: pista.id,
+      fareType: 'HALF',
+      priceCents: 4000,
+    },
+    {
+      sectorId: pistaPremium.id,
+      fareType: 'FULL',
+      priceCents: 16000,
+    },
+    {
+      sectorId: pistaPremium.id,
+      fareType: 'HALF',
+      priceCents: 8000,
     },
   ]);
 

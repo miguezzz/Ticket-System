@@ -1,6 +1,6 @@
 # Etapa 3 — Schema do Banco
 
-> Status: **implementada** (A e B aprovados). Schema Drizzle + migration `0000_init` gerados.
+> Status: **implementada** (A e B aprovados; revisada para Etapa 4). Schema Drizzle + migration `0000_init` gerados.
 > Stack: **PostgreSQL** (Neon/Supabase) + **Drizzle ORM**. Fonte de verdade final.
 > Base: [regras-de-negocio.md](./regras-de-negocio.md) · [maquina-de-estados.md](./maquina-de-estados.md).
 > Sem diagramas — só texto/tabelas. Próxima: Etapa 4 (eventos e assentos).
@@ -8,7 +8,8 @@
 Decisões aplicadas (Etapa 3): events≠sessions (1:N); admissão geral via **setores**;
 índice único parcial anti-dupla-venda; `reservation_items` para multi-assento;
 identidade via **Supabase Auth** (sem tabela `users` própria); tarifa × classe
-separadas; **centavos + BRL**; PKs **UUID** + status em **pgEnum**.
+separadas; preços explícitos em `sector_prices`; **centavos + BRL**; PKs **UUID**
+e status em **pgEnum**.
 
 ---
 
@@ -18,7 +19,8 @@ separadas; **centavos + BRL**; PKs **UUID** + status em **pgEnum**.
 |---|---|
 | `events` | Atração/cartaz (filme, show). Pai de várias sessões. |
 | `sessions` | Sessão específica: data/hora, sala, modo de assento, teto por usuário. |
-| `sectors` | Setor da sessão (Plateia, Pista, Camarote): classe + preço base + capacidade. |
+| `sectors` | Setor da sessão (Plateia, Pista, Camarote): classe + capacidade. |
+| `sector_prices` | Preços explícitos por setor e tarifa (`FULL`/`HALF`). |
 | `seats` | Poltrona individual (**só modo `assigned`**). Pertence a um setor. |
 | `reservations` | Carrinho/compra. Máquina de estados da Reserva. |
 | `reservation_items` | Itens da reserva (1 por assento/vaga). Mora aqui o anti-dupla-venda. |
@@ -67,9 +69,16 @@ tabela `users` própria (no Supabase dá pra adicionar FK para `auth.users(id)`)
 - `id` uuid PK · `session_id` uuid FK→sessions NOT NULL
 - `name` text NOT NULL (ex.: "Plateia A", "Pista")
 - `seat_class` seat_class NOT NULL
-- `base_price_cents` int NOT NULL
 - `capacity` int NULL  ← obrigatório no modo `GENERAL`; no `ASSIGNED` é derivado de `seats`
 - `created_at` / `updated_at`
+
+### sector_prices
+- `id` uuid PK · `sector_id` uuid FK→sectors NOT NULL
+- `fare_type` fare_type NOT NULL
+- `price_cents` int NOT NULL
+- `currency` char(3) NOT NULL DEFAULT `'BRL'`
+- `created_at` / `updated_at`
+- **UNIQUE(`sector_id`, `fare_type`)** ← uma fonte de preço por tarifa no setor
 
 ### seats  *(só modo ASSIGNED)*
 - `id` uuid PK · `session_id` uuid FK NOT NULL · `sector_id` uuid FK NOT NULL
@@ -146,24 +155,22 @@ mesmo assento. Ok?
   de linhas vs. `sectors.capacity`). Será garantida de forma **atômica** na Etapa 7 e
   com contador no **Redis** na Etapa 6. O banco continua sendo a verdade final via
   contagem de `reservation_items` ativos por setor.
-- **Regra de meia-entrada** (desconto da `HALF`) é **lógica de negócio/config**, não
-  schema. `reservation_items.price_cents` guarda o **snapshot** do preço final.
+- **Regra de meia-entrada** agora fica explícita em `sector_prices`; a aplicação
+  escolhe a tarifa e `reservation_items.price_cents` guarda o **snapshot** do preço final.
 - **`updated_at`** será mantido por trigger ou pela aplicação (decidir na implementação).
 
 ---
 
-## Próximo passo (implementação desta etapa)
+## Próximo passo
 
-Após seu aval, eu:
-1. instalo `drizzle-orm`, `drizzle-kit`, `pg` (e config Neon/Supabase);
-2. crio `src/db/schema.ts` (as 10 tabelas + enums acima) e `drizzle.config.ts`;
-3. gero a **primeira migration** e um script de seed mínimo.
+A Etapa 3 está implementada. A evolução de eventos, sessões, setores, preços e
+assentos foi registrada em [eventos-e-assentos.md](./eventos-e-assentos.md).
 
 ---
 
 ## Implementação (arquivos)
 
-- `backend/src/db/schema.ts` — 10 tabelas + 9 enums (pgEnum)
+- `backend/src/db/schema.ts` — 11 tabelas + 9 enums (pgEnum)
 - `backend/src/db/index.ts` — cliente Drizzle (Pool `pg`)
 - `backend/src/db/migrate.ts` — runner de migrations
 - `backend/src/db/seed.ts` — seed (1 evento, sessão cinema + sessão show)
@@ -178,4 +185,6 @@ Após seu aval, eu:
 
 - Etapa 3 implementada: A (`tickets UNIQUE(reservation_item_id)`) e B (índice parcial
   em `reservation_items`) aprovados. Schema compila (`tsc --noEmit` ok) e migration
-  `0000_init` gerada com os 3 índices únicos parciais corretos. Próxima: Etapa 4.
+  `0000_init` gerada com os índices únicos parciais corretos.
+- Revisão da Etapa 4: `base_price_cents` removido de `sectors`; preços passam para
+  `sector_prices` com `UNIQUE(sector_id, fare_type)`.

@@ -88,8 +88,17 @@ CREATE TABLE "sectors" (
 	"session_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"seat_class" "seat_class" NOT NULL,
-	"base_price_cents" integer NOT NULL,
 	"capacity" integer,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "sector_prices" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"sector_id" uuid NOT NULL,
+	"fare_type" "fare_type" NOT NULL,
+	"price_cents" integer NOT NULL,
+	"currency" char(3) DEFAULT 'BRL' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -126,6 +135,7 @@ ALTER TABLE "reservations" ADD CONSTRAINT "reservations_session_id_sessions_id_f
 ALTER TABLE "seats" ADD CONSTRAINT "seats_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "seats" ADD CONSTRAINT "seats_sector_id_sectors_id_fk" FOREIGN KEY ("sector_id") REFERENCES "public"."sectors"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sectors" ADD CONSTRAINT "sectors_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sector_prices" ADD CONSTRAINT "sector_prices_sector_id_sectors_id_fk" FOREIGN KEY ("sector_id") REFERENCES "public"."sectors"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tickets" ADD CONSTRAINT "tickets_reservation_item_id_reservation_items_id_fk" FOREIGN KEY ("reservation_item_id") REFERENCES "public"."reservation_items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tickets" ADD CONSTRAINT "tickets_reservation_id_reservations_id_fk" FOREIGN KEY ("reservation_id") REFERENCES "public"."reservations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -137,4 +147,6 @@ CREATE INDEX "reservation_items_reservation_idx" ON "reservation_items" USING bt
 CREATE UNIQUE INDEX "reservations_active_user_session_uq" ON "reservations" USING btree ("session_id","user_id") WHERE "reservations"."status" in ('HELD','PAYMENT_PENDING');--> statement-breakpoint
 CREATE INDEX "reservations_status_expires_idx" ON "reservations" USING btree ("status","expires_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "seats_session_label_uq" ON "seats" USING btree ("session_id","label");--> statement-breakpoint
+CREATE UNIQUE INDEX "sector_prices_sector_fare_uq" ON "sector_prices" USING btree ("sector_id","fare_type");--> statement-breakpoint
+CREATE INDEX "sector_prices_sector_idx" ON "sector_prices" USING btree ("sector_id");--> statement-breakpoint
 CREATE INDEX "sessions_event_starts_idx" ON "sessions" USING btree ("event_id","starts_at");
