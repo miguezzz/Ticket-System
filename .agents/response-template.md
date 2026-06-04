@@ -12,6 +12,12 @@ Use este formato para manter respostas curtas, auditaveis e comparaveis entre et
 
 - 
 
+## Ambiguidades e perguntas
+
+- Ambiguidades encontradas:
+- Perguntas feitas:
+- Decisoes do usuario usadas:
+
 ## Resultado
 
 Status: `aprovado` | `aprovado_com_ajustes` | `bloqueado` | `implementado`
@@ -35,8 +41,23 @@ Resumo:
 
 - Comandos executados:
 - Resultado:
+- Testes criados/atualizados:
+- Suite completa executada:
+- Todos os testes passaram: `sim` | `nao`
 - Testes faltantes:
 
 ## Pendencias
+
+- 
+
+## Gate de etapa
+
+Pode avancar para a proxima etapa: `sim` | `nao`
+
+Motivo:
+
+- 
+
+Decisoes pendentes antes de avancar:
 
 - 

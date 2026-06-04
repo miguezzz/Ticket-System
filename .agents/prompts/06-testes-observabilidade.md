@@ -26,6 +26,15 @@ Crie ou revise testes e observabilidade para:
 <FLUXO_OU_MODULO>
 ```
 
+Regras obrigatorias:
+
+- Crie ou atualize testes automatizados proporcionais ao risco da mudanca.
+- Nunca delete testes existentes.
+- Se uma regra mudou, atualize o teste antigo para a nova regra preservando cobertura equivalente ou melhor.
+- Rode a suite completa antes de recomendar avancar.
+- Se qualquer teste falhar, a etapa fica bloqueada.
+- Validacao manual nao substitui teste automatizado quando houver codigo executavel.
+
 Priorize:
 
 - Concorrencia em reserva de N assentos.
@@ -46,6 +55,9 @@ Observabilidade minima:
 ## Saida esperada
 
 - Testes adicionados ou plano de testes.
+- Confirmacao de que nenhum teste foi deletado.
+- Comando da suite completa executada.
+- Resultado da suite completa.
 - Casos nao cobertos e motivo.
 - Logs/metricas/traces adicionados.
 - Como validar localmente.

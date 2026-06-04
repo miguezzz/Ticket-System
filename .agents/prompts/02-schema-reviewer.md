@@ -39,12 +39,17 @@ Procure:
 - Problemas no modo `GENERAL`, especialmente capacidade.
 - Relacionamentos que impedem reconciler, webhook idempotente, outbox ou emissao.
 - Migration divergente do `schema.ts`.
+- Decisao de schema que ainda nao foi aprovada pelo usuario.
+
+Nao altere schema por preferencia propria. Se houver alternativa de modelagem,
+registre opcoes e pergunte antes de implementar.
 
 ## Saida esperada
 
 - Achados por severidade, com arquivo/linha.
 - Risco pratico de cada achado.
 - Correcao recomendada.
+- Perguntas de decisao antes de qualquer mudanca estrutural.
 - Testes ou queries para validar.
 
 Se nao houver achados, diga claramente quais riscos residuais permanecem.

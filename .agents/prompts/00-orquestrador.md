@@ -27,7 +27,11 @@ Sua tarefa:
 3. Identificar decisoes ja fechadas que restringem a etapa.
 4. Identificar pendencias que precisam ser decididas agora.
 5. Propor um plano de execucao pequeno, com criterios de pronto.
-6. Se a tarefa for implementavel sem novas decisoes, implementar.
+6. Perguntar antes de qualquer decisao nova de arquitetura, regra de negocio, design, API, schema, infra ou estado.
+7. Se a tarefa for implementavel sem novas decisoes, implementar.
+
+Nunca resolva ambiguidades no chute. Se houver mais de uma solucao plausivel,
+apresente opcoes e trade-offs, recomende uma, mas aguarde decisao do usuario.
 
 ## Saida esperada
 
@@ -35,5 +39,6 @@ Sua tarefa:
 - Premissas.
 - Plano curto.
 - Pendencias bloqueantes, se houver.
+- Perguntas de decisao, se houver.
 - Arquivos que devem ser alterados.
 - Testes/validacoes recomendados.

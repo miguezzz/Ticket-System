@@ -65,11 +65,16 @@ Ingresso:
 - Webhooks precisam ser idempotentes.
 - O webhook nao emite ingresso diretamente; ele registra o pagamento e agenda/outboxa trabalho.
 - Fluxos que cruzam pagamento, expiracao e venda precisam usar compare-and-set ou transacao.
+- Nenhuma etapa avanca sem testes automatizados criados/atualizados e suite passando.
+- Testes existentes nunca devem ser deletados; quando a regra mudar, atualize o teste preservando cobertura equivalente ou melhor.
+- Agents nao podem tomar decisoes novas de arquitetura, regra de negocio, design, contrato de API, schema, infraestrutura ou estado sem perguntar.
+- Ambiguidades devem ser debatidas antes de qualquer implementacao que dependa delas.
+- Decisoes novas aprovadas precisam ser registradas nos docs da etapa.
 
 ## Proximas etapas
 
-A etapa 3 esta implementada e em revisao. A proxima etapa planejada e:
+A etapa 5 esta implementada e em revisao. A proxima etapa planejada e:
 
-4. Eventos e assentos
+6. Redis para hold/TTL
 
-Depois entram Redis, atomicidade, BullMQ, checkout, webhook, outbox, emissao, reconciler, retries, observabilidade, testes, painel/admin e documentacao.
+Depois entram atomicidade, BullMQ, checkout, webhook, outbox, emissao, reconciler, retries, observabilidade, testes, painel/admin e documentacao.

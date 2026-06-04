@@ -37,11 +37,13 @@ Regras obrigatorias:
 - Expiracao: BullMQ.
 - Confirmacao de pagamento vs expiracao: compare-and-set/transacao.
 - Banco e fonte final; Redis nao confirma venda sozinho.
+- Se houver ambiguidade de fluxo, chave Redis, TTL, retry, job ou contrato de API, pergunte antes de implementar.
 
 ## Saida esperada
 
 - Desenho da transacao/lock.
 - Pontos de corrida cobertos.
+- Perguntas de decisao e respostas usadas.
 - Queries ou operacoes atomicas usadas.
 - Jobs BullMQ criados/alterados.
 - Testes de concorrencia recomendados ou implementados.

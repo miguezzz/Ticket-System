@@ -33,11 +33,13 @@ Requisitos:
 - Modo `GENERAL` vende vagas por setor, sem `seat_id`.
 - Consulta de disponibilidade deve expor assentos/setores ocupados de forma consistente com `reservation_items`.
 - Nao implementar Redis/TTL de selecao aqui, salvo se explicitamente pedido; isso e etapa 6.
+- Se surgir decisao nova de design, API, schema ou regra de disponibilidade, pergunte antes de implementar.
 
 ## Saida esperada
 
 - Arquivos alterados.
 - Endpoints/servicos criados ou revisados.
 - Como a disponibilidade e calculada.
+- Decisoes perguntadas e respostas usadas.
 - Testes executados.
 - Pendencias para Redis/atomicidade.

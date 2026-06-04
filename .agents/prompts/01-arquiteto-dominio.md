@@ -37,10 +37,15 @@ Verifique:
 - Se trata corretamente pagamento atrasado, expiracao e cancelamento.
 - Se mantem banco como fonte final.
 - Se existe alguma decisao que deve ser registrada em docs.
+- Se ha ambiguidade que precisa ser perguntada ao usuario antes da implementacao.
+
+Nunca decida regra de negocio, estado, contrato ou arquitetura no lugar do usuario.
+Quando houver ambiguidade, bloqueie a proposta e formule perguntas objetivas.
 
 ## Saida esperada
 
 - Aprovado, aprovado com ajustes ou bloqueado.
 - Pontos de risco.
 - Decisoes que precisam entrar nos docs.
+- Perguntas que precisam ser respondidas antes de implementar.
 - Sugestao de modelagem mais simples, se houver.

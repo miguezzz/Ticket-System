@@ -38,6 +38,7 @@ Regras obrigatorias:
 - Pagamento aprovado apos expiracao deve ser tratado pelo reconciler.
 - Se assento/vaga ja foi vendido, iniciar estorno.
 - Outbox deve ser gravada na mesma transacao do evento de dominio.
+- Se houver ambiguidade de provider, webhook, evento, outbox, estorno ou reconciler, pergunte antes de implementar.
 
 ## Saida esperada
 
@@ -46,4 +47,5 @@ Regras obrigatorias:
 - Estrategia de idempotencia.
 - Eventos de outbox criados.
 - Caminho para emissao/reconciler.
+- Perguntas de decisao e respostas usadas.
 - Testes de duplicidade, fora de ordem e retry.

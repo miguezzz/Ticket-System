@@ -1,5 +1,23 @@
 # Roadmap tecnico
 
+## Regra global de passagem
+
+Nenhuma etapa pode ser considerada pronta sem:
+
+- ambiguidades relevantes debatidas e decididas pelo usuario;
+- decisoes novas registradas nos docs da etapa;
+- testes automatizados criados ou atualizados para a mudanca;
+- suite completa executada;
+- todos os testes passando;
+- zero testes deletados.
+
+Se um teste existente nao representar mais a regra atual, ele deve ser atualizado,
+nao removido.
+
+Agents nao podem decidir arquitetura, regra de negocio, design, API, schema,
+infraestrutura ou fluxo de estado sem perguntar. Se uma etapa depender de uma
+dessas decisoes, ela fica bloqueada ate o usuario responder.
+
 ## 1. Regras de negocio
 
 Pronto quando as regras principais estiverem documentadas e pendencias explicitas.
@@ -38,11 +56,13 @@ Pronto quando houver modelo de cadastro/seed/consulta para:
 - Assentos por sessao/setor no modo `ASSIGNED`.
 - Consulta de disponibilidade por sessao.
 
-Status atual: implementado, aguardando revisao.
+Status atual: implementado.
 
 ## 5. Reserva temporaria no banco
 
 Pronto quando `add_to_cart` criar reserva e itens com TTL de 7 minutos e liberar corretamente em cancelamento/expiracao.
+
+Status atual: implementado, aguardando revisao.
 
 ## 6. Redis para hold/TTL
 
