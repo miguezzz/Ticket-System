@@ -48,20 +48,20 @@ Retorna sessao com setores e precos.
 
 Retorna disponibilidade da sessao.
 
-No modo `ASSIGNED`, retorna todos os assentos por setor com status:
+No modo `ASSIGNED`, retorna todos os assentos por setor com status publico:
 
 - `AVAILABLE`
-- `HELD`
-- `SOLD`
+- `SELECTED` (quando o Redis hold pertence ao `selectionId` informado)
+- `UNAVAILABLE`
 
-Qualquer `reservation_item` com status diferente de `RELEASED` torna o assento
-indisponivel para compra.
+Qualquer `reservation_item` com status diferente de `RELEASED` ou Redis hold de
+outro `selectionId` torna o assento `UNAVAILABLE`.
 
 No modo `GENERAL`, retorna contadores por setor:
 
 - `capacity`
-- `heldCount`
-- `soldCount`
+- `selectedCount`
+- `unavailableCount`
 - `availableCount`
 
 ---
@@ -133,9 +133,8 @@ Gera `A1..A12`, `B1..B12`, `C1..C12`.
 ## Pendencias para etapas futuras
 
 - Auth/permissao real nos endpoints `/admin`.
-- Redis para lock efemero de selecao.
 - Reserva temporaria persistida com TTL.
-- Concorrencia atomica para capacidade no modo `GENERAL`.
+- BullMQ para expiracao automatica de reservas persistidas.
 - Disponibilidade em tempo real via WebSocket, se desejado.
 
 ---

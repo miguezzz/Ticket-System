@@ -5,7 +5,7 @@
 > [maquina-de-estados.md](./maquina-de-estados.md),
 > [schema-do-banco.md](./schema-do-banco.md) e
 > [eventos-e-assentos.md](./eventos-e-assentos.md).
-> Proxima: Etapa 6 (Redis para hold/TTL).
+> Complemento: [redis-hold-ttl.md](./redis-hold-ttl.md).
 
 Esta etapa cria a reserva persistida no banco. A reserva nasce no `add_to_cart`,
 em estado `HELD`, com `expires_at` de 7 minutos.
@@ -14,9 +14,10 @@ em estado `HELD`, com `expires_at` de 7 minutos.
 
 ## Decisoes aplicadas
 
-- A selecao efemera ainda nao existe aqui; Redis entra na Etapa 6.
+- A selecao efemera foi implementada na Etapa 6 com Redis.
 - A reserva real nasce em `POST /sessions/:sessionId/reservations`.
 - O cliente envia `userId` no body enquanto auth real nao existe.
+- Desde a Etapa 6, o cliente tambem envia `selectionId`.
 - Uma reserva ativa por usuario/sessao e garantida por validacao + indice parcial.
 - Itens ficam em `reservation_items` com status `HELD`.
 - O preco e lido de `sector_prices` e congelado em `reservation_items.price_cents`.
@@ -38,6 +39,7 @@ Body:
 
 ```json
 {
+  "selectionId": "99999999-9999-4999-8999-999999999999",
   "userId": "00000000-0000-4000-8000-000000000000",
   "items": [
     { "seatId": "11111111-1111-4111-8111-111111111111", "fareType": "FULL" },
@@ -59,6 +61,7 @@ Body:
 
 ```json
 {
+  "selectionId": "99999999-9999-4999-8999-999999999999",
   "userId": "00000000-0000-4000-8000-000000000000",
   "items": [
     { "sectorId": "33333333-3333-4333-8333-333333333333", "fareType": "FULL", "quantity": 2 }
@@ -71,7 +74,8 @@ Regras:
 - `sectorId` precisa pertencer a sessao.
 - `quantity` default e `1`.
 - A capacidade do setor e checada por contagem de itens ativos.
-- A garantia forte contra corrida de capacidade sera reforcada na Etapa 7.
+- A garantia forte contra corrida de capacidade foi reforcada na Etapa 7 com
+  `SELECT ... FOR UPDATE` na linha do setor.
 
 ---
 
@@ -138,24 +142,29 @@ rotina automaticamente.
 Suite:
 
 ```bash
+docker compose --profile test build backend-test
 docker compose --profile test run --rm backend-test
 ```
 
 Cobertura inicial:
 
 - cria evento, sessao, setor, precos e assentos;
+- cria `selectionId` e seleciona assento no Redis;
 - cria reserva `HELD`;
 - valida snapshot de preco em `reservation_items`;
-- confirma assento `HELD` na disponibilidade;
+- confirma assento `UNAVAILABLE` na disponibilidade publica;
 - cancela reserva;
 - confirma item `RELEASED` e assento `AVAILABLE`.
+- cobre rollback de carrinho multi-assento quando um item conflita;
+- cobre capacidade `GENERAL` serializada por `FOR UPDATE`;
+- cobre limpeza de hold Redis quando o banco recusa a reserva.
 
 ---
 
 ## Pendencias para etapas futuras
 
 - Auth real para substituir `userId` no body.
-- Redis lock de 30s antes do `add_to_cart`.
-- Concorrencia atomica reforcada para admissao geral.
 - BullMQ para expirar reservas automaticamente.
 - Checkout para transicionar `HELD` para `PAYMENT_PENDING`.
+- Painel/admin futuro para visualizar reservas em aberto por status, em cards com
+  barra superior de tempo restante ate expiracao.

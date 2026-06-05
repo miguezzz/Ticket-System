@@ -15,7 +15,7 @@ concorrência e expiração:
 
 ### Fase A — Seleção de assento (efêmera)
 - Enquanto o usuário **escolhe** o(s) assento(s), a concorrência é tratada por
-  um **lock no Redis com TTL de 30s**.
+  um **lock no Redis com TTL de 60s**.
 - Esse lock **não é** uma reserva: serve só para evitar que dois usuários
   cliquem no mesmo assento ao mesmo tempo durante a escolha.
 

@@ -14,6 +14,7 @@ import {
   sectors,
   sessions,
 } from '../db/schema';
+import { HoldsService } from '../holds/holds.service';
 
 const RESERVATION_TTL_MS = 7 * 60 * 1000;
 
@@ -37,10 +38,13 @@ type ReservationItemDraft = Omit<typeof reservationItems.$inferInsert, 'reservat
 
 @Injectable()
 export class ReservationsService {
+  constructor(private readonly holdsService: HoldsService) {}
+
   async createReservation(sessionId: string, input: unknown) {
     const session = await this.findSession(sessionId);
     const body = asDict(input);
     const userId = requiredUuid(body.userId, 'userId');
+    const selectionId = requiredUuid(body.selectionId, 'selectionId');
     const requestedItems = this.parseItems(body.items, session.seatingMode);
     const requestedTicketCount = requestedItems.reduce(
       (sum, item) => sum + (item.kind === 'GENERAL' ? item.quantity : 1),
@@ -54,10 +58,30 @@ export class ReservationsService {
     }
 
     const expiresAt = new Date(Date.now() + RESERVATION_TTL_MS);
+    let holdsValidated = false;
 
     try {
-      return await db.transaction(async (tx) => {
-        await this.releaseExpiredActiveReservation(tx, sessionId, userId);
+      if (session.seatingMode === 'ASSIGNED') {
+        await this.holdsService.assertSeatHoldsOwned(
+          sessionId,
+          requestedItems
+            .filter((item) => item.kind === 'ASSIGNED')
+            .map((item) => item.seatId),
+          selectionId,
+        );
+      } else {
+        await this.holdsService.assertGeneralHoldsOwned(
+          sessionId,
+          requestedItems
+            .filter((item) => item.kind === 'GENERAL')
+            .map((item) => ({ sectorId: item.sectorId, quantity: item.quantity })),
+          selectionId,
+        );
+      }
+      holdsValidated = true;
+
+      const reservationWithItems = await db.transaction(async (tx) => {
+        await this.releaseExpiredReservationsForSession(tx, sessionId);
         await this.assertNoActiveReservation(tx, sessionId, userId);
         await this.assertUserTicketLimit(tx, sessionId, userId, requestedTicketCount);
 
@@ -93,9 +117,35 @@ export class ReservationsService {
           totalCents: items.reduce((sum, item) => sum + item.priceCents, 0),
         };
       });
+
+      if (session.seatingMode === 'ASSIGNED') {
+        await this.holdsService.releaseSeatHolds(
+          sessionId,
+          requestedItems
+            .filter((item) => item.kind === 'ASSIGNED')
+            .map((item) => item.seatId),
+          selectionId,
+        );
+      } else {
+        await this.holdsService.releaseGeneralHolds(
+          sessionId,
+          requestedItems
+            .filter((item) => item.kind === 'GENERAL')
+            .map((item) => ({ sectorId: item.sectorId })),
+          selectionId,
+        );
+      }
+
+      return reservationWithItems;
     } catch (error) {
       if (isUniqueViolation(error)) {
+        if (holdsValidated) {
+          await this.releaseHoldsForRequest(session.seatingMode, sessionId, requestedItems, selectionId);
+        }
         throw new ConflictException('Algum assento ou reserva ativa ja foi ocupado.');
+      }
+      if (holdsValidated && error instanceof ConflictException) {
+        await this.releaseHoldsForRequest(session.seatingMode, sessionId, requestedItems, selectionId);
       }
       throw error;
     }
@@ -266,6 +316,7 @@ export class ReservationsService {
       throw new BadRequestException('Um ou mais setores nao pertencem a sessao.');
     }
 
+    await this.lockSectorsForCapacity(tx, sectorRows.map((sector) => sector.sectorId));
     await this.assertGeneralCapacity(tx, generalItems, sectorRows);
 
     const prices = await this.getPricesForSectors(tx, Array.from(new Set(sectorIds)));
@@ -384,7 +435,7 @@ export class ReservationsService {
     }
   }
 
-  private async releaseExpiredActiveReservation(tx: Tx, sessionId: string, userId: string) {
+  private async releaseExpiredReservationsForSession(tx: Tx, sessionId: string) {
     const now = new Date();
     const expiredActive = await tx
       .select({ id: reservations.id })
@@ -392,7 +443,6 @@ export class ReservationsService {
       .where(
         and(
           eq(reservations.sessionId, sessionId),
-          eq(reservations.userId, userId),
           inArray(reservations.status, ['HELD', 'PAYMENT_PENDING']),
           sql`${reservations.expiresAt} <= ${now}`,
         ),
@@ -411,6 +461,38 @@ export class ReservationsService {
       .update(reservations)
       .set({ status: 'EXPIRED', expiresAt: null, updatedAt: now })
       .where(inArray(reservations.id, reservationIds));
+  }
+
+  private async lockSectorsForCapacity(tx: Tx, sectorIds: string[]) {
+    for (const sectorId of sectorIds) {
+      await tx.execute(sql`select id from sectors where id = ${sectorId} for update`);
+    }
+  }
+
+  private async releaseHoldsForRequest(
+    seatingMode: string,
+    sessionId: string,
+    requestedItems: RequestedItem[],
+    selectionId: string,
+  ) {
+    if (seatingMode === 'ASSIGNED') {
+      await this.holdsService.releaseSeatHolds(
+        sessionId,
+        requestedItems
+          .filter((item) => item.kind === 'ASSIGNED')
+          .map((item) => item.seatId),
+        selectionId,
+      );
+      return;
+    }
+
+    await this.holdsService.releaseGeneralHolds(
+      sessionId,
+      requestedItems
+        .filter((item) => item.kind === 'GENERAL')
+        .map((item) => ({ sectorId: item.sectorId })),
+      selectionId,
+    );
   }
 
   private async getPricesForSectors(tx: Tx, sectorIds: string[]) {

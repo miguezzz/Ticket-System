@@ -14,6 +14,7 @@ import {
   sectors,
   sessions,
 } from '../db/schema';
+import { HoldsService } from '../holds/holds.service';
 
 type SeatingMode = 'ASSIGNED' | 'GENERAL';
 type SeatClass = 'STANDARD' | 'PREMIUM';
@@ -23,6 +24,8 @@ type Dict = Record<string, unknown>;
 
 @Injectable()
 export class EventsService {
+  constructor(private readonly holdsService: HoldsService) {}
+
   async listEvents() {
     return db.select().from(events).orderBy(asc(events.createdAt));
   }
@@ -51,15 +54,15 @@ export class EventsService {
     };
   }
 
-  async getAvailability(sessionId: string) {
+  async getAvailability(sessionId: string, selectionId?: string) {
     const session = await this.findSession(sessionId);
     const sectorList = await this.getSectorsWithPrices(sessionId);
 
     if (session.seatingMode === 'ASSIGNED') {
-      return this.getAssignedAvailability(session, sectorList);
+      return this.getAssignedAvailability(session, sectorList, selectionId);
     }
 
-    return this.getGeneralAvailability(session, sectorList);
+    return this.getGeneralAvailability(session, sectorList, selectionId);
   }
 
   async createEvent(input: unknown) {
@@ -313,6 +316,7 @@ export class EventsService {
   private async getAssignedAvailability(
     session: typeof sessions.$inferSelect,
     sectorList: SectorWithPrices[],
+    selectionId?: string,
   ) {
     const sectorIds = sectorList.map((sector) => sector.id);
     const seatList = sectorIds.length
@@ -341,8 +345,10 @@ export class EventsService {
 
     const statusBySeatId = new Map<string, string>();
     for (const item of activeItems) {
-      if (item.seatId) statusBySeatId.set(item.seatId, item.status);
+      if (item.seatId) statusBySeatId.set(item.seatId, 'UNAVAILABLE');
     }
+
+    const holdOwnersBySeatId = await this.holdsService.getSeatHoldOwners(session.id);
 
     return {
       sessionId: session.id,
@@ -356,7 +362,9 @@ export class EventsService {
             label: seat.label,
             rowLabel: seat.rowLabel,
             seatNumber: seat.seatNumber,
-            status: statusBySeatId.get(seat.id) ?? 'AVAILABLE',
+            status:
+              statusBySeatId.get(seat.id) ??
+              getRedisSeatStatus(holdOwnersBySeatId.get(seat.id), selectionId),
           })),
       })),
     };
@@ -365,6 +373,7 @@ export class EventsService {
   private async getGeneralAvailability(
     session: typeof sessions.$inferSelect,
     sectorList: SectorWithPrices[],
+    selectionId?: string,
   ) {
     const sectorIds = sectorList.map((sector) => sector.id);
     const activeItems = sectorIds.length
@@ -385,21 +394,28 @@ export class EventsService {
     return {
       sessionId: session.id,
       seatingMode: session.seatingMode,
-      sectors: sectorList.map((sector) => {
+      sectors: await Promise.all(
+        sectorList.map(async (sector) => {
         const sectorItems = activeItems.filter((item) => item.sectorId === sector.id);
-        const heldCount = sectorItems.filter((item) => item.status === 'HELD').length;
-        const soldCount = sectorItems.filter((item) => item.status === 'SOLD').length;
-        const occupiedCount = sectorItems.length;
+        const persistedUnavailableCount = sectorItems.length;
+        const redisCounts = await this.holdsService.getGeneralHoldCounts(
+          session.id,
+          sector.id,
+          selectionId,
+        );
         const capacity = sector.capacity ?? 0;
+        const unavailableCount = persistedUnavailableCount + redisCounts.otherCount;
+        const selectedCount = redisCounts.selectedCount;
 
         return {
           ...sector,
           capacity,
-          heldCount,
-          soldCount,
-          availableCount: Math.max(capacity - occupiedCount, 0),
+          selectedCount,
+          unavailableCount,
+          availableCount: Math.max(capacity - unavailableCount - selectedCount, 0),
         };
-      }),
+        }),
+      ),
     };
   }
 
@@ -573,4 +589,10 @@ function requiredEnum<T extends string>(
     throw new BadRequestException(`${field} deve ser um de: ${allowed.join(', ')}.`);
   }
   return value as T;
+}
+
+function getRedisSeatStatus(owner: string | undefined, selectionId: string | undefined) {
+  if (!owner) return 'AVAILABLE';
+  if (selectionId && owner === selectionId) return 'SELECTED';
+  return 'UNAVAILABLE';
 }

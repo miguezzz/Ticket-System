@@ -30,7 +30,7 @@ Trabalhe no seguinte fluxo concorrente:
 
 Regras obrigatorias:
 
-- Selecao efemera: Redis lock 30s.
+- Selecao efemera: Redis lock 60s.
 - Reserva persistida: banco, TTL 7min, estado `HELD`.
 - Reserva de N itens e atomica: todos ou nenhum.
 - Reserva ativa por usuario por sessao: `HELD` ou `PAYMENT_PENDING`.

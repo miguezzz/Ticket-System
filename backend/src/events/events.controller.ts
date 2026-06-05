@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { EventsService } from './events.service';
 
 @Controller()
@@ -21,7 +21,10 @@ export class EventsController {
   }
 
   @Get('sessions/:sessionId/availability')
-  getAvailability(@Param('sessionId') sessionId: string) {
-    return this.eventsService.getAvailability(sessionId);
+  getAvailability(
+    @Param('sessionId') sessionId: string,
+    @Query('selectionId') selectionId?: string,
+  ) {
+    return this.eventsService.getAvailability(sessionId, selectionId);
   }
 }

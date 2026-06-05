@@ -19,7 +19,7 @@ O sistema precisa lidar com alta concorrencia, selecao temporaria de assentos, r
 
 ## Decisoes fechadas
 
-- Selecao de assento antes do carrinho vive apenas no Redis, com lock TTL de 30s.
+- Selecao de assento antes do carrinho vive apenas no Redis, com lock TTL de 60s.
 - Reserva real nasce apenas no `add_to_cart`, em estado `HELD`.
 - Reserva persistida expira em 7 minutos.
 - Expiracao da reserva e job BullMQ.
@@ -73,8 +73,8 @@ Ingresso:
 
 ## Proximas etapas
 
-A etapa 5 esta implementada e em revisao. A proxima etapa planejada e:
+A etapa 7 esta implementada para `add_to_cart`. A proxima etapa planejada e:
 
-6. Redis para hold/TTL
+8. BullMQ para expiracao
 
-Depois entram atomicidade, BullMQ, checkout, webhook, outbox, emissao, reconciler, retries, observabilidade, testes, painel/admin e documentacao.
+Depois entram checkout, webhook, outbox, emissao, reconciler, retries, observabilidade, testes, painel/admin e documentacao.

@@ -152,9 +152,9 @@ mesmo assento. Ok?
 ## Notas de modelagem
 
 - **Capacidade no modo GERAL** não dá pra impor por constraint relacional (é contagem
-  de linhas vs. `sectors.capacity`). Será garantida de forma **atômica** na Etapa 7 e
-  com contador no **Redis** na Etapa 6. O banco continua sendo a verdade final via
-  contagem de `reservation_items` ativos por setor.
+  de linhas vs. `sectors.capacity`). Na Etapa 7, ela passou a ser garantida no
+  `add_to_cart` com `SELECT ... FOR UPDATE` na linha do setor. O banco continua
+  sendo a verdade final via contagem de `reservation_items` ativos por setor.
 - **Regra de meia-entrada** agora fica explícita em `sector_prices`; a aplicação
   escolhe a tarifa e `reservation_items.price_cents` guarda o **snapshot** do preço final.
 - **`updated_at`** será mantido por trigger ou pela aplicação (decidir na implementação).

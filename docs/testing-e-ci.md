@@ -8,20 +8,27 @@
 
 O backend usa Jest + Supertest para testes e2e da API contra PostgreSQL.
 
+Para validacoes exploratorias via HTTP/SQL, use tambem
+[manual-testes.md](./manual-testes.md).
+
 Comando local via Docker Compose:
 
 ```bash
+docker compose --profile test build backend-test
 docker compose --profile test run --rm backend-test
 ```
 
 Esse comando:
 
 1. sobe o Postgres local;
-2. constroi o stage `test` do Dockerfile;
+2. reconstrui o stage `test` do Dockerfile para copiar codigo/testes atuais;
 3. roda `npm ci` dentro do build;
 4. executa `npm run test:ci`;
 5. aplica migrations antes dos testes;
 6. roda a suite e2e.
+
+Sem o `build`, o `run` pode reaproveitar uma imagem antiga e executar uma suite
+desatualizada.
 
 ## Scripts
 
@@ -40,6 +47,7 @@ npm run test:ci
 Um CI/CD pode usar o mesmo contrato do Docker Compose:
 
 ```bash
+docker compose --profile test build backend-test
 docker compose --profile test run --rm backend-test
 docker compose build backend
 ```

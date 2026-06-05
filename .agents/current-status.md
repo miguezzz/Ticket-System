@@ -2,10 +2,11 @@
 
 ## Etapa em andamento
 
-Etapa 5: Reserva temporaria no banco.
+Etapa 8: BullMQ para expiracao.
 
-A etapa 4 implementou catalogo publico e fluxo manual/admin sem auth. A etapa 5
-implementa `add_to_cart` persistido no banco com TTL de 7 minutos.
+A etapa 7 fechou a atomicidade do `add_to_cart`: assento marcado usa constraint
+parcial no banco como garantia final, admissao geral usa `SELECT ... FOR UPDATE`
+na linha do setor, e conflitos limpam os holds Redis do request.
 
 ## Arquivos principais
 
@@ -22,21 +23,32 @@ implementa `add_to_cart` persistido no banco com TTL de 7 minutos.
 - `backend/src/events/admin-events.controller.ts`
 - `backend/src/events/events.service.ts`
 - `docs/reserva-temporaria-no-banco.md`
+- `docs/redis-hold-ttl.md`
+- `docs/concorrencia-atomica.md`
 - `docs/testing-e-ci.md`
+- `backend/src/holds/holds.controller.ts`
+- `backend/src/holds/holds.service.ts`
+- `backend/src/holds/redis.service.ts`
 - `backend/src/reservations/reservations.controller.ts`
 - `backend/src/reservations/reservations.service.ts`
 - `backend/test/reservations.e2e-spec.ts`
 
 ## Pergunta operacional do momento
 
-As reservas persistidas estao consistentes o bastante para seguir para Redis hold/TTL?
+Como o BullMQ deve agendar e processar a expiracao das reservas persistidas?
 
 ## Checks recomendados agora
 
-- Rodar build do backend.
+- Rodar `docker compose --profile test build backend-test`.
 - Rodar `docker compose --profile test run --rm backend-test`.
-- Criar seed e testar `POST /sessions/:id/reservations` em sessao `ASSIGNED`.
-- Testar reserva `GENERAL` por setor/quantidade.
+- Criar `selectionId` com `POST /sessions/:id/selections`.
+- Testar hold de assento com `POST /sessions/:id/seats/:seatId/hold`.
+- Testar disponibilidade com `selectionId`, esperando `SELECTED`.
+- Testar disponibilidade sem `selectionId`, esperando `UNAVAILABLE`.
+- Testar `POST /sessions/:id/reservations` exigindo `selectionId`.
+- Testar reserva `GENERAL` por setor/quantidade com hold Redis previo.
+- Testar conflito multi-assento com rollback completo.
+- Testar corrida de capacidade em sessao `GENERAL`.
 - Conferir snapshot de preco em `reservation_items.price_cents`.
 - Testar cancelamento e `POST /admin/reservations/expire-due`.
 - Conferir disponibilidade apos reserva/cancelamento/expiracao.
@@ -46,29 +58,28 @@ As reservas persistidas estao consistentes o bastante para seguir para Redis hol
 Use com `.agents/prompts/04-concorrencia-redis-bullmq.md` ou um agent de revisao:
 
 ```text
-Revise a etapa 5 inteira antes de eu seguir para Redis hold/TTL.
+Revise a etapa 7 antes de eu seguir para BullMQ.
 
-Quero saber se `docs/reserva-temporaria-no-banco.md`, `backend/src/reservations/*`,
-`backend/src/events/*` e `backend/src/db/schema.ts` estao consistentes com as regras.
+Quero saber se `docs/concorrencia-atomica.md`, `backend/src/reservations/*`,
+`backend/src/holds/*` e `backend/test/reservations.e2e-spec.ts` estao consistentes.
 
 Priorize achados que podem quebrar:
 
-- uma reserva ativa por usuario/sessao;
-- TTL de 7 minutos;
-- snapshot de preco;
-- multi-assento;
-- admissao geral por setor/capacidade;
-- cancelamento e expiracao liberando itens.
+- atomicidade do carrinho multi-item;
+- conflito de assento marcado via constraint parcial;
+- capacidade de admissao geral com `FOR UPDATE`;
+- limpeza de Redis hold apos conflito;
+- expiracao oportunista antes de contar disponibilidade.
 ```
 
-## Criterio para fechar a etapa 5
+## Criterio para fechar a etapa 7
 
-A etapa 5 pode ser fechada quando:
+A etapa 7 pode ser considerada fechada porque:
 
-- `add_to_cart` criar reserva `HELD` com `expires_at`.
-- Itens forem criados com snapshot de preco.
-- Reserva ativa unica por usuario/sessao for respeitada.
-- Cancelamento e expiracao manual liberarem itens.
-- Testes e2e passarem via Docker.
+- `ASSIGNED` tem garantia final no banco contra assento duplicado.
+- `GENERAL` serializa capacidade por linha de setor.
+- Carrinho multi-item faz rollback completo em conflito.
+- Holds Redis sao limpos quando o banco recusa a reserva.
+- Testes e2e passam via Docker.
 - O projeto compilar.
-- Pendencias de Redis, BullMQ e concorrencia atomica estiverem marcadas para etapas futuras.
+- Pendencias de BullMQ e pagamento estao marcadas para etapas futuras.

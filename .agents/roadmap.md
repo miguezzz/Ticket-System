@@ -62,15 +62,29 @@ Status atual: implementado.
 
 Pronto quando `add_to_cart` criar reserva e itens com TTL de 7 minutos e liberar corretamente em cancelamento/expiracao.
 
-Status atual: implementado, aguardando revisao.
+Status atual: implementado.
 
 ## 6. Redis para hold/TTL
 
-Pronto quando a selecao efemera usar lock Redis de 30s e o backend diferenciar selecao de reserva persistida.
+Pronto quando a selecao efemera usar lock Redis de 60s e o backend diferenciar selecao de reserva persistida.
+
+Status atual: implementado.
 
 ## 7. Concorrencia atomica
 
 Pronto quando criacao de reserva e confirmacao de venda forem transacionais, cobrindo corrida entre usuarios e corrida contra expiracao.
+
+Status atual: implementado para `add_to_cart`.
+
+Escopo fechado:
+
+- `ASSIGNED` protegido por constraint parcial em `reservation_items`.
+- `GENERAL` protegido por `SELECT ... FOR UPDATE` na linha do setor.
+- Reserva multi-item faz rollback completo em conflito.
+- Holds Redis do request sao limpos quando o banco recusa a reserva.
+- Expiracao oportunista de reservas vencidas da sessao antes de contar capacidade.
+
+Pendencia futura: aplicar o mesmo rigor nas transicoes de checkout/pagamento/webhook quando essas etapas existirem.
 
 ## 8. BullMQ para expiracao
 
@@ -111,6 +125,12 @@ Pronto quando houver testes que simulem reservas simultaneas, expiracao vs pagam
 ## 17. Painel/admin
 
 Pronto quando houver visao operacional de eventos, assentos, reservas, pagamentos, jobs e falhas.
+
+Requisito ja aprovado para esta etapa:
+
+- Tela de reservas em aberto separadas por status, em formato de cards.
+- Cada card deve ter uma barra fina superior mostrando visualmente quanto tempo falta para a reserva expirar.
+- A barra deve usar `expires_at` e o TTL total da reserva para indicar progresso/urgencia.
 
 ## 18. Documentacao
 

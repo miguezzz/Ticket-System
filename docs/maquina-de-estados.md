@@ -23,8 +23,8 @@ Fontes de sinal: **usuário** (UI), **webhook** de pagamento (mockado),
 
 Estados: `HELD` · `PAYMENT_PENDING` · `CONFIRMED` · `EXPIRED` · `CANCELLED` · `FAILED`
 
-Fase efêmera anterior — `SELECTING` — vive **só no Redis** (lock 30s), sem linha no
-banco. A Reserva nasce em `HELD` no `add_to_cart`. Se o lock de 30s expira antes do
+Fase efêmera anterior — `SELECTING` — vive **só no Redis** (lock 60s), sem linha no
+banco. A Reserva nasce em `HELD` no `add_to_cart`. Se o lock de 60s expira antes do
 add-to-cart, nada é persistido.
 
 Fluxo principal (texto): `SELECTING → HELD → PAYMENT_PENDING → CONFIRMED`.

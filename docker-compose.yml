@@ -1,4 +1,14 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -27,6 +37,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
 
@@ -41,6 +53,8 @@ services:
       RUN_MIGRATIONS: "true"
     command: ["node", "dist/db/seed.js"]
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
 
@@ -53,9 +67,12 @@ services:
     environment:
       NODE_ENV: test
       DATABASE_URL: postgresql://ticket:ticket@postgres:5432/ticket_system
+      REDIS_URL: redis://redis:6379
       RUN_MIGRATIONS: "true"
     command: ["npm", "run", "test:ci"]
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
 
