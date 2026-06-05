@@ -188,7 +188,6 @@ TTL 60s
 - `backend/src/events/events.controller.ts`
 - `backend/src/reservations/reservations.service.ts`
 - `docker-compose.yml`
-- `docker-compose.supabase.yml`
 - `backend/test/reservations.e2e-spec.ts`
 
 ---

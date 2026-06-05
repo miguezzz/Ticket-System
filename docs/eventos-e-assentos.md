@@ -168,14 +168,15 @@ Crie um `.env` na raiz a partir de `.env.example` e preencha
 Subir backend apontando para Supabase:
 
 ```bash
-docker compose -f docker-compose.supabase.yml up --build backend
+docker compose --profile supabase up --build backend-supabase
 ```
 
 Rodar seed no Supabase:
 
 ```bash
-docker compose -f docker-compose.supabase.yml run --rm backend-seed
+docker compose --profile seed-supabase run --rm backend-seed-supabase
 ```
 
-O `docker-compose.supabase.yml` e standalone: ele nao sobe Postgres local e usa a
-`DATABASE_URL` da raiz.
+O modo Supabase fica no proprio `docker-compose.yml`: ele nao sobe Postgres local
+para o `backend-supabase` e usa a `DATABASE_URL` da raiz. Chame o servico
+explicitamente para evitar subir tambem o backend local.

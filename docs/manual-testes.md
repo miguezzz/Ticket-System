@@ -73,28 +73,30 @@ RUN_MIGRATIONS=true
 Subir backend usando Supabase:
 
 ```bash
-docker compose -f docker-compose.supabase.yml up --build backend
+docker compose --profile supabase up --build backend-supabase
 ```
 
 Rodar em segundo plano:
 
 ```bash
-docker compose -f docker-compose.supabase.yml up -d --build backend
+docker compose --profile supabase up -d --build backend-supabase
 ```
 
 Logs:
 
 ```bash
-docker compose -f docker-compose.supabase.yml logs backend --tail=100
+docker compose --profile supabase logs --tail=100 backend-supabase
 ```
 
 Rodar seed no Supabase:
 
 ```bash
-docker compose -f docker-compose.supabase.yml run --rm backend-seed
+docker compose --profile seed-supabase run --rm backend-seed-supabase
 ```
 
 > Cuidado: o seed cria dados reais no banco apontado pela `DATABASE_URL`.
+> Evite `docker compose --profile supabase up` sem informar o servico, porque os
+> servicos locais sem profile tambem podem subir.
 
 ---
 

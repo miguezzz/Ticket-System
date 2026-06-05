@@ -1,3 +1,14 @@
+x-backend-build: &backend-build
+  context: ./backend
+
+x-backend-runtime-env: &backend-runtime-env
+  NODE_ENV: production
+  PORT: 3000
+  REDIS_URL: redis://redis:6379
+  RUN_MIGRATIONS: "true"
+
+x-local-database-url: &local-database-url postgresql://ticket:ticket@postgres:5432/ticket_system
+
 services:
   redis:
     image: redis:7-alpine
@@ -27,13 +38,10 @@ services:
 
   backend:
     build:
-      context: ./backend
+      <<: *backend-build
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://ticket:ticket@postgres:5432/ticket_system
-      REDIS_URL: redis://redis:6379
-      RUN_MIGRATIONS: "true"
+      <<: *backend-runtime-env
+      DATABASE_URL: *local-database-url
     ports:
       - "3000:3000"
     depends_on:
@@ -42,14 +50,30 @@ services:
       postgres:
         condition: service_healthy
 
+  backend-supabase:
+    build:
+      <<: *backend-build
+    profiles:
+      - supabase
+    environment:
+      <<: *backend-runtime-env
+      DATABASE_URL: ${DATABASE_URL:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    ports:
+      - "3000:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+
   backend-seed:
     build:
-      context: ./backend
+      <<: *backend-build
     profiles:
       - seed
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://ticket:ticket@postgres:5432/ticket_system
+      DATABASE_URL: *local-database-url
       RUN_MIGRATIONS: "true"
     command: ["node", "dist/db/seed.js"]
     depends_on:
@@ -57,6 +81,17 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+
+  backend-seed-supabase:
+    build:
+      <<: *backend-build
+    profiles:
+      - seed-supabase
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    command: ["node", "dist/db/seed.js"]
 
   backend-test:
     build:
@@ -66,7 +101,7 @@ services:
       - test
     environment:
       NODE_ENV: test
-      DATABASE_URL: postgresql://ticket:ticket@postgres:5432/ticket_system
+      DATABASE_URL: *local-database-url
       REDIS_URL: redis://redis:6379
       RUN_MIGRATIONS: "true"
     command: ["npm", "run", "test:ci"]
